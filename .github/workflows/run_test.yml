@@ -20,7 +20,13 @@ jobs:
       - name: Install Octave
         run: |
           if [[ "$RUNNER_OS" == "Linux" ]]; then
-            sudo apt-get update && sudo apt-get install -y octave liboctave-dev libhdf5-dev
+            # liboctave-dev provides mkoctfile, which is needed to build
+            # oct-hdf5. It lives in the universe component, and the runner
+            # image only indexes noble/main for the base release, so universe
+            # has to be enabled before apt can find it
+            sudo add-apt-repository -y universe
+            sudo apt-get update
+            sudo apt-get install -y octave liboctave-dev libhdf5-dev
           elif [[ "$RUNNER_OS" == "macOS" ]]; then
             brew install octave hdf5
           else
@@ -30,14 +36,24 @@ jobs:
           fi
       - name: Install oct-hdf5
         # the low-level HDF5 interface used by saveh5/loadh5 is not part of
-        # Octave itself; without it the test suite skips instead of failing
-        continue-on-error: true
+        # Octave itself. Building it needs a compiler toolchain, which the
+        # Windows Octave bundle may not provide, so it is best effort there
+        continue-on-error: ${{ runner.os == 'Windows' }}
         run: |
           octave-cli --eval "pkg install https://github.com/NeuroJSON/oct-hdf5/archive/refs/tags/git20250413.zip"
+      - name: Confirm the HDF5 backend is usable
+        # without this the suite would skip its HDF5 tests and still report
+        # success, so a broken backend has to fail the job here
+        if: ${{ runner.os != 'Windows' }}
+        run: |
+          octave-cli --eval "pkg load oct-hdf5; disp('oct-hdf5 loaded')"
       - name: Report whether the HDF5 backend is available
+        if: ${{ runner.os == 'Windows' }}
         run: |
           octave-cli --eval "try; pkg load oct-hdf5; disp('oct-hdf5 loaded'); catch; disp('oct-hdf5 NOT available, HDF5 tests will skip'); end"
       - name: Run unit tests
+        # the load is tolerant here because the step above already fails the
+        # job when the backend is missing on the platforms that require it
         run: |
           octave-cli --eval "try; pkg load oct-hdf5; catch; end; addpath(pwd); cd test; run_easyh5_test"
       - name: Run the demo script
