@@ -83,7 +83,7 @@ function str = describe(val)
 % the payload is a large array
 %
 if (ischar(val))
-    str = ['''' val ''''];
+    str = ['''' val(:)' ''''];
 elseif (isempty(val))
     str = sprintf('empty %s', class(val));
 elseif (isnumeric(val) || islogical(val))

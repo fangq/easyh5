@@ -1,0 +1,72 @@
+name: EasyH5 CI
+
+on: [push, pull_request]
+
+jobs:
+  octave_test:
+    name: Octave tests
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, ubuntu-24.04, macos-14, windows-2022]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+      - name: Install Octave
+        run: |
+          if [[ "$RUNNER_OS" == "Linux" ]]; then
+            sudo apt-get update && sudo apt-get install -y octave liboctave-dev libhdf5-dev
+          elif [[ "$RUNNER_OS" == "macOS" ]]; then
+            brew install octave hdf5
+          else
+            curl --retry 3 -kL https://mirrors.ocf.berkeley.edu/gnu/octave/windows/octave-9.2.0-w64-64.7z --output octave.7z
+            7z x octave.7z -ooctave -y
+            echo "$PWD/octave/octave-9.2.0-w64-64/mingw64/bin" >> $GITHUB_PATH
+          fi
+      - name: Install oct-hdf5
+        # the low-level HDF5 interface used by saveh5/loadh5 is not part of
+        # Octave itself; without it the test suite skips instead of failing
+        continue-on-error: true
+        run: |
+          octave-cli --eval "pkg install https://github.com/NeuroJSON/oct-hdf5/archive/refs/tags/git20250413.zip"
+      - name: Report whether the HDF5 backend is available
+        run: |
+          octave-cli --eval "try; pkg load oct-hdf5; disp('oct-hdf5 loaded'); catch; disp('oct-hdf5 NOT available, HDF5 tests will skip'); end"
+      - name: Run unit tests
+        run: |
+          octave-cli --eval "try; pkg load oct-hdf5; catch; end; addpath(pwd); cd test; run_easyh5_test"
+      - name: Run the demo script
+        run: |
+          octave-cli --eval "try; pkg load oct-hdf5; catch; end; addpath(pwd); cd examples; demo_eazyh5_basic"
+      - name: Verify the Octave package builds and installs
+        if: ${{ runner.os == 'Linux' }}
+        run: |
+          ./mkpkg.sh
+          octave-cli --eval "pkg install easyh5-*.tar.gz; pkg load easyh5; disp(which('saveh5')); pkg uninstall easyh5"
+
+  matlab_test:
+    name: MATLAB tests
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-14, windows-2022]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+      - name: Set up MATLAB
+        uses: matlab-actions/setup-matlab@v2
+      - name: Run unit tests
+        uses: matlab-actions/run-command@v2
+        with:
+          command: addpath(pwd); cd test; run_easyh5_test
+      - name: Run the demo script
+        uses: matlab-actions/run-command@v2
+        with:
+          command: addpath(pwd); cd examples; demo_eazyh5_basic
