@@ -26,7 +26,12 @@ jobs:
             # These packages are in the universe component, so enable it first
             sudo add-apt-repository -y universe
             sudo apt-get update
-            sudo apt-get install -y octave octave-dev libhdf5-dev
+            # oct-hdf5 links with the HDF5 flags recorded in Octave's own build
+            # environment, and the Debian/Ubuntu Octave records
+            #     HDF5_LIBS: -lhdf5 -lmpi
+            # even though its HDF5 paths point at the serial build, so libmpi.so
+            # from libopenmpi-dev has to be present for the link to succeed
+            sudo apt-get install -y octave octave-dev libhdf5-dev libopenmpi-dev
           elif [[ "$RUNNER_OS" == "macOS" ]]; then
             brew install octave hdf5
           else
