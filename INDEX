@@ -1,0 +1,16 @@
+easyh5 >> EasyH5
+HDF5 file I/O
+ saveh5
+ loadh5
+ regrouph5
+JData annotation encoding
+ jdataencode
+ jdatadecode
+Helper functions
+ jsonopt
+ varargin2struct
+ mergestruct
+ encodevarname
+ decodevarname
+ transposemat
+ isoctavemesh

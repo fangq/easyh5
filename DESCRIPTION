@@ -1,0 +1,20 @@
+Name: easyh5
+Version: 0.9.0
+Date: 2026-08-30
+Title: An easy-to-use HDF5 data interface for MATLAB/Octave
+Author: Qianqian Fang <fangqq@gmail.com>
+Maintainer: Qianqian Fang <fangqq@gmail.com>
+Description: EasyH5 is a fully automated, fast and compact HDF5 data
+ interface for MATLAB and GNU Octave. It provides two functions,
+ saveh5 and loadh5, to write an arbitrary MATLAB/Octave data
+ structure - including nested structs, cell arrays, complex and
+ sparse arrays, strings, tables and maps - to an HDF5 file, and to
+ read an HDF5 file back into the equivalent data structure. Data
+ types that HDF5 can not represent natively are stored using the
+ JData annotation format so that they survive a round trip. In
+ GNU Octave, the low-level HDF5 interface is provided by the
+ oct-hdf5 package.
+URL: https://github.com/NeuroJSON/easyh5
+License: GPL-3.0-or-later OR BSD-3-Clause
+Depends: octave (>= 5.0.0)
+Categories: Data Format
